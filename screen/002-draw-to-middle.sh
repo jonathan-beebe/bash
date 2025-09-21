@@ -27,11 +27,11 @@ purple='\033[38;5;93m'
 clear='\033[2J'
 reset='\033[0m'
 
-SCREEN_WIDTH=$(tput cols)
-SCREEN_HEIGHT=$(tput lines)
+screen_width=$(tput cols)
+screen_height=$(tput lines)
 
-X=$(($SCREEN_WIDTH / 2))
-Y=$(($SCREEN_HEIGHT / 2))
+X=$(($screen_width / 2))
+Y=$(($screen_height / 2))
 
 cmd $clear
 
@@ -43,5 +43,6 @@ draw_center "$X" "$((Y - 1))" "$msg" "$orange"
 center_text="$X ✖️ $Y"
 draw_center "$X" "$Y" "$center_text" "$purple"
 
-# Reset cursor to the beginning of the next line after printing (optional)
+# Reset cursor to bottom of screen
+tput cup $((screen_height-1)) $((screen_width-1))
 cmd $reset
