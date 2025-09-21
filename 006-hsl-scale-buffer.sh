@@ -57,14 +57,10 @@ hsl_to_rgb() {
   echo "$R $G $B"
 }
 
-
-
-
 # Function to restore terminal settings on exit
 function restore_terminal {
   # Disable mouse tracking (DECSET 1000) and restore terminal
   echo -ne "\033[?1000l"
-  # Restore echoing back to terminal
   stty echo
   tput cnorm # Show the cursor
 }
@@ -74,17 +70,20 @@ trap restore_terminal EXIT
 
 # Hide the cursor and save terminal settings
 tput civis
-# Do not echo input characters
+# Turn off terminal echo/processing
 stty -echo
-
-
 
 # We are usign a zer0-based coordinate system
 # so the maximum coordinate is one less than
 # the number of columns/rows
 width=$(( $(tput cols) - 1 ))
-# Reduce height to leave room for the prompt at the end
-height=$(( $(tput lines) - 2 ))
+# Reduce height by 4 extra to avoid scrolling
+# on most terminals
+height=$(( $(tput lines) - 3 ))
+
+buffer=""
+
+buffer+=$(resetOutput)
 
 # For each row in the terminal
 for row in `seq 0 $height`; do
@@ -92,7 +91,6 @@ for row in `seq 0 $height`; do
   # the row represents the saturation
   # scale the saturation to 0..100 
   s=$(( row * 100 / height ))
-
   # For each column in this row
   for column in `seq 0 $width`; do
 
@@ -101,9 +99,12 @@ for row in `seq 0 $height`; do
     h=$(( column * 360 / width ))
 
     read r g b < <(hsl_to_rgb $h 50 $s)
-    setBackgroundColor $r $g $b
-    echo -en " "
-
+    # buffer+=$(echo -en "\x1b[48;2;$1;$2;$3""m"" ")
+    buffer+=$(setBackgroundColor $r $g $b)
+    buffer+=$(echo -en " ")
   done
-  resetOutput
+  buffer+=$(resetOutput)
 done
+buffer+=$(resetOutput)
+
+printf "%b" "$buffer"
