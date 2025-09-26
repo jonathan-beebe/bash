@@ -91,23 +91,29 @@ function draw() {
     x=$1  # column to highlight
     y=$2  # row to highlight
 
-    # bg='\e[48;5;61m'   # background
-    # hl='\e[48;5;210m'   # highlight
+    bold_text='\e[1m'
+    normal_text='\e[22m'
 
-    # bg='\e[48;5;96m'   # background
-    # hl='\e[48;5;222m'   # highlight
+    fg="\e[38"
+    bg="\e[48"
+
+    white="2;255;255;255m"
+    black="2;0;0;0m"
 
     # experimenting with color pallets extracted from these lidar images
     # https://kottke.org/23/09/stunning-high-resolution-lidar-images-of-rivers-deltas
 
-    bg='\e[48;2;59;51;111m'     # background
-    hl='\e[48;2;203;146;120m'  # highlight
+    purple="2;59;51;111m"
+    tan="2;203;146;120m"
 
-    # bg='\e[48;2;33;22;36m'     # background
-    # hl='\e[48;2;158;78;59m'  # highlight
+    wine="2;33;22;36m"
+    orange="2;158;78;59m"
 
-    # bg='\e[48;2;46;76;99m'     # background
-    # hl='\e[48;2;213;146;76m'  # highlight
+    sky_blue="2;46;76;99m"
+    yellow="2;213;146;76m"
+
+    cl="${normal_text}${bg};${purple}${fg};${white}" # regular cell
+    hl="${bold_text}${bg};${tan}${fg};${black}"      # highlighted cell
     
     reset='\e[0m'
 
@@ -123,7 +129,7 @@ function draw() {
 
     # 1. Fill entire screen with background color
     printf '\e[H\e[2J'  # Clear and home
-    printf "${bg}%*s" $((ROWS * COLS)) ""
+    printf "${cl}%*s" $((ROWS * COLS)) ""
 
     # 2. Draw the highlight column
     for ((r=1; r<=ROWS; r++)); do
@@ -141,10 +147,8 @@ function draw() {
         # Set color based on whether this is in the highlight column
         if [[ $col -eq $(( x - 1 )) ]]; then
             printf "${hl}"
-        elif [[ $y -eq 1 ]]; then
-            printf "${hl}"
         else
-            printf "${bg}"
+            printf "${cl}"
         fi
         print_ascii $col
     done
@@ -156,7 +160,7 @@ function draw() {
         if [[ $row -eq $y ]]; then
             printf "${hl}"
         else
-            printf "${bg}"
+            printf "${cl}"
         fi
         print_ascii $((row-1))
     done
