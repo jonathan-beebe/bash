@@ -11,12 +11,12 @@ start_alt_screen() {
   printf '\033[?25l'
 }
 
-# Trap to restore terminal on exit
 end_alt_screen() {
     printf '\033[?25h'  # Show cursor
     printf '\033[?1049l' # Leave alternate screen
 }
 
+# Trap to restore terminal on exit
 cleanup() {
   end_alt_screen
 }

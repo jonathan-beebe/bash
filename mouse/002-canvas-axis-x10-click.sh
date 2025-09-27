@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-# I fint it *fasctinating* how the x10 protocol streams mouse events
+# Starting from ./screen/004-canvas-axis-x10.sh
+# Draw the axis for the entire screen, then track mouse
+# clicks and draw a crosshair at the clicked row and column.
+
+# I find it *fasctinating* how the x10 protocol streams mouse events
 # to the terminal. I have not found any official documentation on it,
 # but have pieved things together through experimentation and reading
 # various online resources.

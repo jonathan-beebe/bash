@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 
-# I fint it *fasctinating* how the x10 protocol streams mouse events
+# Riffing off of 002-canvas-axis-x10-click.sh
+# and incorporating ../screen/003-draw-to-alt-screen.sh.
+#
+# Draw the axis for the entire screen, then track mouse movement
+# and draw a crosshair at the current coordinate. This script
+# attempts to track mouse events in a non-blocking way. Because
+# drawing can take time and lags the mouse events, we try to 
+# discard mouse events that occur while the screen is actively drawing
+# and only capture the next mouse move coordinates after a draw cycle
+# has finished.
+
+# I find it *fasctinating* how the x10 protocol streams mouse events
 # to the terminal. I have not found any official documentation on it,
 # but have pieved things together through experimentation and reading
 # various online resources.
@@ -227,32 +238,20 @@ start_alt_screen() {
   printf '\033[?25l'
 }
 
-# Trap to restore terminal on exit
-end_alt_screen() {
-    printf '\033[?25h'  # Show cursor
-    printf '\033[?1049l' # Leave alternate screen
-}
-
 # Function to restore terminal settings on exit
 function restore_terminal {
-    ROWS=$(tput lines)
+    # Leave alternate screen FIRST
+    printf '\033[?1049l'
 
-    # reset output
-    echo -en "\x1b[0m\n"
-
-    # Disable mouse tracking
-    echo -e "\e[?1000l"
-    echo -e "\e[?1003l"
-    echo -e "\e[?1006l"
-
-    # Restore echoing back to terminal
-    stty echo icanon
-
-    # Show the cursor
-    tput cnorm
-
-    end_alt_screen
-
+    # Then restore everything else
+    printf "\e[?1000l"  # Disable basic mouse tracking
+    printf "\e[?1003l"  # Disable all mouse motions
+    printf "\e[?1006l"  # Disable SGR extended mode
+    printf "\x1b[0m"     # Reset colors
+    printf '\033[?25h'   # Show cursor
+    
+    stty echo icanon     # Restore terminal settings
+    
     exit 0
 }
 
@@ -268,9 +267,9 @@ main() {
     stty -echo -icanon min 0 time 0  # Non-blocking read
     
     # Enable SGR mouse tracking
-    echo -e "\e[?1000h"  # Enable basic mouse tracking
-    echo -e "\e[?1003h"  # Enable all mouse motions
-    echo -e "\e[?1006h"  # Enable SGR extended mode
+    printf "\e[?1000h"  # Enable basic mouse tracking
+    printf "\e[?1003h"  # Enable all mouse motions
+    printf "\e[?1006h"  # Enable SGR extended mode
     
     # clear
     

@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+# Starting from ./color/003-hsl-scaled-fit-screen.sh
+# render the HSL colors and allow a tap anywhere on screen
+# This script simply clears the color at the tapped point.
+# Works best in a smaller window due to rendering lag!
+
+# We are usign a zero-based coordinate system
+# so the maximum coordinate is one less than
+# the number of columns/rows
+width=$(( $(tput cols) - 1 ))
+# Reduce height to leave room for the prompt at the end
+height=$(( $(tput lines) - 2 ))
+
 setBackgroundColor() {
     echo -en "\x1b[48;2;$1;$2;$3""m"
 }
@@ -59,10 +71,24 @@ hsl_to_rgb() {
 
 # Function to restore terminal settings on exit
 function restore_terminal {
+  tput cup "$(( height - 1 ))" "0"
+  resetOutput
+
+  # Disable mouse tracking
+  echo -ne "\033[?1000l"
+
   # Disable mouse tracking (DECSET 1000) and restore terminal
   echo -ne "\033[?1000l"
+
+  # Restore echoing back to terminal
   stty echo
-  tput cnorm # Show the cursor
+
+  # Show the cursor
+  tput cnorm
+
+  printf "\e[?25h\e[?1049l"   # show cursor and leave alt screen
+
+  exit 0
 }
 
 # Trap the exit signal to ensure cleanup runs
@@ -70,20 +96,13 @@ trap restore_terminal EXIT
 
 # Hide the cursor and save terminal settings
 tput civis
-# Turn off terminal echo/processing
-stty -echo
+# Do not echo input characters
+stty -icanon -echo
 
-# We are usign a zer0-based coordinate system
-# so the maximum coordinate is one less than
-# the number of columns/rows
-width=$(( $(tput cols) - 1 ))
-# Reduce height by 4 extra to avoid scrolling
-# on most terminals
-height=$(( $(tput lines) - 3 ))
+# Enable mouse tracking modes
+echo -ne "\033[?1000h"
 
-buffer=""
-
-buffer+=$(resetOutput)
+printf '\e[?1049h\e[?25l'               # enter alt screen, hide cursor
 
 # For each row in the terminal
 for row in `seq 0 $height`; do
@@ -91,6 +110,7 @@ for row in `seq 0 $height`; do
   # the row represents the saturation
   # scale the saturation to 0..100 
   s=$(( row * 100 / height ))
+
   # For each column in this row
   for column in `seq 0 $width`; do
 
@@ -99,12 +119,35 @@ for row in `seq 0 $height`; do
     h=$(( column * 360 / width ))
 
     read r g b < <(hsl_to_rgb $h 50 $s)
-    # buffer+=$(echo -en "\x1b[48;2;$1;$2;$3""m"" ")
-    buffer+=$(setBackgroundColor $r $g $b)
-    buffer+=$(echo -en " ")
-  done
-  buffer+=$(resetOutput)
-done
-buffer+=$(resetOutput)
+    setBackgroundColor $r $g $b
+    echo -en " "
 
-printf "%b" "$buffer"
+  done
+  resetOutput
+done
+
+# Read mouse input in a loop
+while true; do
+  # Read the escape sequence for a mouse event
+  # -n 6: Read exactly 6 characters, which is the expected length for a click event
+  read -n 6 -s line
+
+  # A mouse click event looks like ^[[Mabc where a=32 for a left click,
+  # and b and c are the column and row + 32, respectively.
+  # Convert character to ASCII value and subtract 32
+  button=$(printf "%d" "'${line:3:1}")
+  col=$(printf "%d" "'${line:4:1}")
+  row=$(printf "%d" "'${line:5:1}")
+
+  # The decoded values are the ASCII value minus 32
+  col=$((col - 32))
+  row=$((row - 32))
+
+  # Check for a left click (mouse button 1) and valid coordinates
+  if [ "$button" -eq 32 ] && [ "$row" -gt 0 ] && [ "$col" -gt 0 ]; then
+    # Use tput cup to position cursor and report the click
+    tput cup "$row" "$col"
+    # Clear background color (reset to default)
+    printf "\033[49m "
+  fi
+done

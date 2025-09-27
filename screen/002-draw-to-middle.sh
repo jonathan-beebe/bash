@@ -1,36 +1,48 @@
 #!/usr/bin/env bash
 
-# Print a messsge at the center of the screen
+# x, y, message, color
+draw_center() {
+  local x="$1"
+  local y="$2"
+  local msg="$3"
+  local msg_length=${#msg}
+  local color="$4"
+  local reset='\033[0m'
 
-read -r rows cols < <(stty size)
+  printf '\033[%d;%dH%b%s%b\n' \
+    "$y" \
+    "$((x - (msg_length / 2)))" \
+    "$color" \
+    "$msg" \
+    "$reset"
+}
 
-x=$(($cols / 2))
-y=$(($rows / 2))
-
-# For more details on how to define and use colors see
-# 004-colors.sh
+cmd() {
+  arg="$1"
+  printf '%b' "$arg"
+}
 
 orange='\033[38;5;214m'
 purple='\033[38;5;93m'
+clear='\033[2J'
 reset='\033[0m'
 
+screen_width=$(tput cols)
+screen_height=$(tput lines)
+
+X=$(($screen_width / 2))
+Y=$(($screen_height / 2))
+
+cmd $clear
+
+# Print a messsge at the center of the screen
+
 msg="Center"
-msg_length=${#msg}
+draw_center "$X" "$((Y - 1))" "$msg" "$orange"
 
-printf '\033[%d;%dH%b%s%b\n' \
-  "$((y - 1))" \
-  "$((x - (msg_length / 2)))" \
-  "$orange" \
-  "$msg" \
-  "$reset"
+center_text="$X ✖️ $Y"
+draw_center "$X" "$Y" "$center_text" "$purple"
 
-center_text="$x ✖️ $y"
-center_text_length=${#center_text}
-
-printf '\033[%d;%dH%b%s%b\n' \
-  "$y" \
-  "$((x - (center_text_length / 2)))" \
-  "$purple" \
-  "$center_text" \
-  "$reset"
-
+# Reset cursor to bottom of screen
+tput cup $((screen_height-1)) $((screen_width-1))
+cmd $reset
