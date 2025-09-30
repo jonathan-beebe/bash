@@ -27,8 +27,8 @@ start_alt_screen
 
 # Draw something
 printf '\033[H'  # Move to top-left
-echo "Alternate Screen Demo"
-echo "Press any key to exit..."
+printf "Alternate Screen Demo\n"
+printf "Press any key to exit..."
 
 # Move cursor and draw a box
 printf '\033[5;5H┌────────────┐'
